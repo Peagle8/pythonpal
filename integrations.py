@@ -1,42 +1,55 @@
 import requests
 import json
+import openai
+import os
 
 
-def call_chat_gpt():
-    # Replace with your own API key
-    api_key = 'your_api_key_here'
+def call_gpt_api(prompt_text):
+    api_key = os.getenv("OPENAI_API_KEY")
 
-    # Set up the API request headers
-    headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json'
-    }
+    openai.api_key = api_key
 
-    # Set up the API request payload
-    payload = {
-        'messages': [
-            {'role': 'system', 'content': 'You are a helpful assistant.'},
-            {'role': 'user', 'content': 'What is the capital of France?'}
-        ]
-    }
+    print("Calling Chat GPT API with the entered python code query")
+    try:
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt_text,
+            temperature=0.7,
+            max_tokens=256,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
+        )
+        print("The call to the GPT API was successful")
+    except Exception as e:
+        print(f"An exception occurred while calling Chat GPT: {e}")
+        raise e
 
-    # Make the POST request to the Chat GPT API
-    response = requests.post(
-        'https://api.openai.com/v1/assistant/completions',
-        headers=headers,
-        data=json.dumps(payload)
-    )
-
-    # Check if the request was successful
-    if response.status_code == 200:
-        # Extract the assistant's response from the API response
-        assistant_response = response.json()['choices'][0]['message']['content']
-        print(f"Assistant: {assistant_response}")
-    else:
-        print(f"Request failed with status code {response.status_code}")
+    return response.choices[0].text
 
 
-if __name__ == '__main__':
-    call_chat_gpt()
+def create_python_for_gpt_response(file_name, text_for_file):
+    print("Creating a new .py file based on the response from the GPT response")
+
+    try:
+        # create a new .py file
+        with open(file_name, 'w') as f:
+            f.write(text_for_file)
+            # Close the file
+            f.close()
+            print(f"The file {file_name} was created successfully")
+    except Exception as e:
+        print(f"There was an exception raised when trying to save the new file named {file_name}: {e}")
+        raise e
 
 
+def append_python_for_gtp_response(existing_file_name, text_for_file):
+    # First check that the file exists
+    if not os.path.isfile(existing_file_name):
+        print(f"The existing file entered {existing_file_name} does not exist")
+        raise FileNotFoundError(f'The file "{existing_file_name}" does not exist.')
+
+    # Open the file in append mode
+    with open(existing_file_name, 'a') as f:
+        # Write the new python text to the end of the file
+        f.write(text_for_file)
